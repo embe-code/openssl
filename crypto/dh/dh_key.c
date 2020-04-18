@@ -19,6 +19,12 @@
 #include "crypto/bn.h"
 #include "crypto/dh.h"
 
+#ifdef FIPS_MODE
+# define MIN_STRENGTH 112
+#else
+# define MIN_STRENGTH 80
+#endif
+
 static int generate_key(DH *dh);
 static int dh_bn_mod_exp(const DH *dh, BIGNUM *r,
                          const BIGNUM *a, const BIGNUM *p,
@@ -251,8 +257,7 @@ static int generate_key(DH *dh)
              * (where s = max security strength supported).
              * N = dh->length (N = maximum bit length of private key)
              */
-            if (dh->length == 0
-                || dh->params.q == NULL
+            if (dh->params.q == NULL
                 || dh->length > BN_num_bits(dh->params.q))
                 goto err;
             if (!ffc_generate_private_key(ctx, &dh->params, dh->length,
@@ -288,7 +293,8 @@ static int generate_key(DH *dh)
                  * Max Private key size N = len(q)
                  */
                 if (!ffc_generate_private_key(ctx, &dh->params,
-                                              BN_num_bits(dh->params.q), 112,
+                                              BN_num_bits(dh->params.q),
+                                              MIN_STRENGTH,
                                               priv_key))
                     goto err;
             }

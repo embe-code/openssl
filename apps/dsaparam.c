@@ -11,22 +11,19 @@
 #define OPENSSL_SUPPRESS_DEPRECATED
 
 #include <openssl/opensslconf.h>
-#ifdef OPENSSL_NO_DSA
-NON_EMPTY_TRANSLATION_UNIT
-#else
 
-# include <stdio.h>
-# include <stdlib.h>
-# include <time.h>
-# include <string.h>
-# include "apps.h"
-# include "progs.h"
-# include <openssl/bio.h>
-# include <openssl/err.h>
-# include <openssl/bn.h>
-# include <openssl/dsa.h>
-# include <openssl/x509.h>
-# include <openssl/pem.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include "apps.h"
+#include "progs.h"
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/bn.h>
+#include <openssl/dsa.h>
+#include <openssl/x509.h>
+#include <openssl/pem.h>
 
 static int verbose = 0;
 
@@ -36,7 +33,7 @@ typedef enum OPTION_choice {
     OPT_ERR = -1, OPT_EOF = 0, OPT_HELP,
     OPT_INFORM, OPT_OUTFORM, OPT_IN, OPT_OUT, OPT_TEXT, OPT_C,
     OPT_NOOUT, OPT_GENKEY, OPT_ENGINE, OPT_VERBOSE,
-    OPT_R_ENUM
+    OPT_R_ENUM, OPT_PROV_ENUM
 } OPTION_CHOICE;
 
 const OPTIONS dsaparam_options[] = {
@@ -44,9 +41,9 @@ const OPTIONS dsaparam_options[] = {
 
     OPT_SECTION("General"),
     {"help", OPT_HELP, '-', "Display this summary"},
-# ifndef OPENSSL_NO_ENGINE
+#ifndef OPENSSL_NO_ENGINE
     {"engine", OPT_ENGINE, 's', "Use engine e, possibly a hardware device"},
-# endif
+#endif
 
     OPT_SECTION("Input"),
     {"in", OPT_IN, '<', "Input file"},
@@ -62,6 +59,7 @@ const OPTIONS dsaparam_options[] = {
     {"genkey", OPT_GENKEY, '-', "Generate a DSA key"},
 
     OPT_R_OPTIONS,
+    OPT_PROV_OPTIONS,
 
     OPT_PARAMETERS(),
     {"numbits", 0, 0, "Number of bits if generating parameters (optional)"},
@@ -120,6 +118,10 @@ int dsaparam_main(int argc, char **argv)
             break;
         case OPT_R_CASES:
             if (!opt_rand(o))
+                goto end;
+            break;
+        case OPT_PROV_CASES:
+            if (!opt_provider(o))
                 goto end;
             break;
         case OPT_NOOUT:
@@ -281,4 +283,3 @@ static int dsa_cb(int p, int n, BN_GENCB *cb)
     (void)BIO_flush(BN_GENCB_get_arg(cb));
     return 1;
 }
-#endif

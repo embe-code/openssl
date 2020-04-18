@@ -11,28 +11,25 @@
 #define OPENSSL_SUPPRESS_DEPRECATED
 
 #include <openssl/opensslconf.h>
-#ifdef OPENSSL_NO_DH
-NON_EMPTY_TRANSLATION_UNIT
-#else
 
-# include <stdio.h>
-# include <stdlib.h>
-# include <time.h>
-# include <string.h>
-# include "apps.h"
-# include "progs.h"
-# include <openssl/bio.h>
-# include <openssl/err.h>
-# include <openssl/bn.h>
-# include <openssl/dh.h>
-# include <openssl/x509.h>
-# include <openssl/pem.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include "apps.h"
+#include "progs.h"
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/bn.h>
+#include <openssl/dh.h>
+#include <openssl/x509.h>
+#include <openssl/pem.h>
 
-# ifndef OPENSSL_NO_DSA
-#  include <openssl/dsa.h>
-# endif
+#ifndef OPENSSL_NO_DSA
+# include <openssl/dsa.h>
+#endif
 
-# define DEFBITS 2048
+#define DEFBITS 2048
 
 static int dh_cb(int p, int n, BN_GENCB *cb);
 
@@ -41,7 +38,7 @@ typedef enum OPTION_choice {
     OPT_INFORM, OPT_OUTFORM, OPT_IN, OPT_OUT,
     OPT_ENGINE, OPT_CHECK, OPT_TEXT, OPT_NOOUT,
     OPT_DSAPARAM, OPT_C, OPT_2, OPT_3, OPT_5,
-    OPT_R_ENUM
+    OPT_R_ENUM, OPT_PROV_ENUM
 } OPTION_CHOICE;
 
 const OPTIONS dhparam_options[] = {
@@ -50,13 +47,13 @@ const OPTIONS dhparam_options[] = {
     OPT_SECTION("General"),
     {"help", OPT_HELP, '-', "Display this summary"},
     {"check", OPT_CHECK, '-', "Check the DH parameters"},
-# ifndef OPENSSL_NO_DSA
+#ifndef OPENSSL_NO_DSA
     {"dsaparam", OPT_DSAPARAM, '-',
      "Read or generate DSA parameters, convert to DH"},
-# endif
-# ifndef OPENSSL_NO_ENGINE
+#endif
+#ifndef OPENSSL_NO_ENGINE
     {"engine", OPT_ENGINE, 's', "Use engine e, possibly a hardware device"},
-# endif
+#endif
 
     OPT_SECTION("Input"),
     {"in", OPT_IN, '<', "Input file"},
@@ -73,6 +70,7 @@ const OPTIONS dhparam_options[] = {
     {"5", OPT_5, '-', "Generate parameters using 5 as the generator value"},
 
     OPT_R_OPTIONS,
+    OPT_PROV_OPTIONS,
 
     OPT_PARAMETERS(),
     {"numbits", 0, 0, "Number of bits if generating parameters (optional)"},
@@ -151,6 +149,10 @@ int dhparam_main(int argc, char **argv)
             if (!opt_rand(o))
                 goto end;
             break;
+        case OPT_PROV_CASES:
+            if (!opt_provider(o))
+                goto end;
+            break;
         }
     }
     argc = opt_num_rest();
@@ -162,13 +164,13 @@ int dhparam_main(int argc, char **argv)
     if (g && !num)
         num = DEFBITS;
 
-# ifndef OPENSSL_NO_DSA
+#ifndef OPENSSL_NO_DSA
     if (dsaparam && g) {
         BIO_printf(bio_err,
                    "generator may not be chosen for DSA parameters\n");
         goto end;
     }
-# endif
+#endif
 
     out = bio_open_default(outfile, 'w', outformat);
     if (out == NULL)
@@ -189,7 +191,7 @@ int dhparam_main(int argc, char **argv)
 
         BN_GENCB_set(cb, dh_cb, bio_err);
 
-# ifndef OPENSSL_NO_DSA
+#ifndef OPENSSL_NO_DSA
         if (dsaparam) {
             DSA *dsa = DSA_new();
 
@@ -212,7 +214,7 @@ int dhparam_main(int argc, char **argv)
                 goto end;
             }
         } else
-# endif
+#endif
         {
             dh = DH_new();
             BIO_printf(bio_err,
@@ -233,7 +235,7 @@ int dhparam_main(int argc, char **argv)
         if (in == NULL)
             goto end;
 
-# ifndef OPENSSL_NO_DSA
+#ifndef OPENSSL_NO_DSA
         if (dsaparam) {
             DSA *dsa;
 
@@ -255,7 +257,7 @@ int dhparam_main(int argc, char **argv)
                 goto end;
             }
         } else
-# endif
+#endif
         {
             if (informat == FORMAT_ASN1) {
                 /*
@@ -392,4 +394,3 @@ static int dh_cb(int p, int n, BN_GENCB *cb)
     (void)BIO_flush(BN_GENCB_get_arg(cb));
     return 1;
 }
-#endif

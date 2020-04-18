@@ -253,7 +253,7 @@ static int opt_found(const char *name, unsigned int *result,
 typedef enum OPTION_choice {
     OPT_ERR = -1, OPT_EOF = 0, OPT_HELP,
     OPT_ELAPSED, OPT_EVP, OPT_HMAC, OPT_DECRYPT, OPT_ENGINE, OPT_MULTI,
-    OPT_MR, OPT_MB, OPT_MISALIGN, OPT_ASYNCJOBS, OPT_R_ENUM,
+    OPT_MR, OPT_MB, OPT_MISALIGN, OPT_ASYNCJOBS, OPT_R_ENUM, OPT_PROV_ENUM,
     OPT_PRIMES, OPT_SECONDS, OPT_BYTES, OPT_AEAD, OPT_CMAC
 } OPTION_CHOICE;
 
@@ -301,6 +301,7 @@ const OPTIONS speed_options[] = {
      "Use specified offset to mis-align buffers"},
 
     OPT_R_OPTIONS,
+    OPT_PROV_OPTIONS,
 
     OPT_PARAMETERS(),
     {"algorithm", 0, 0, "Algorithm(s) to test (optional; otherwise tests all)"},
@@ -1704,6 +1705,10 @@ int speed_main(int argc, char **argv)
             break;
         case OPT_R_CASES:
             if (!opt_rand(o))
+                goto end;
+            break;
+        case OPT_PROV_CASES:
+            if (!opt_provider(o))
                 goto end;
             break;
         case OPT_PRIMES:
@@ -3462,7 +3467,7 @@ int speed_main(int argc, char **argv)
                 d = Time_F(STOP);
 
                 BIO_printf(bio_err,
-                           mr ? "+R8:%ld:%u:%s:%.2f\n" :
+                           mr ? "+R10:%ld:%u:%s:%.2f\n" :
                            "%ld %u bits %s signs in %.2fs \n",
                            count, sm2_curves[testnum].bits,
                            sm2_curves[testnum].name, d);
@@ -3491,7 +3496,7 @@ int speed_main(int argc, char **argv)
                 count = run_benchmark(async_jobs, SM2_verify_loop, loopargs);
                 d = Time_F(STOP);
                 BIO_printf(bio_err,
-                           mr ? "+R9:%ld:%u:%s:%.2f\n"
+                           mr ? "+R11:%ld:%u:%s:%.2f\n"
                            : "%ld %u bits %s verify in %.2fs\n",
                            count, sm2_curves[testnum].bits,
                            sm2_curves[testnum].name, d);
@@ -3673,7 +3678,7 @@ int speed_main(int argc, char **argv)
         }
 
         if (mr)
-            printf("+F6:%u:%u:%s:%f:%f\n",
+            printf("+F7:%u:%u:%s:%f:%f\n",
                    k, sm2_curves[k].bits, sm2_curves[k].name,
                    sm2_results[k][0], sm2_results[k][1]);
         else
@@ -3968,6 +3973,7 @@ static int do_multi(int multi, int size_num)
 
                 p = buf + 4;
                 k = atoi(sstrsep(&p, sep));
+                sstrsep(&p, sep);
                 sstrsep(&p, sep);
 
                 d = atof(sstrsep(&p, sep));
